@@ -23,7 +23,7 @@ Depth estimation has become more and more popular, as it has a variety of applic
 
 ![Example]({{ '/assets/images/34/depth_estimation_example.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Fig 1: Example of Depth [Estimation] [1]*
+*Figure 1: Example of Depth Estimation [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 This is an example of depth estimation from an image input. As we can see in the center image, the people closer to the sensor or camera are more brightly highlighted, while the people in the background have less emphasis on them. Depth estimation isn’t only limited to certain objects, as it estimates the depth of the walls, floor, and everything else in the image. There are two main types of depth estimation: Monocular, where only a single input view is taken in, and stereo, where a pair of images is inputted, and using differences between the two images, a depth estimation is outputted. Both are widely used, and each have their own advantages. Monocular images are much easier to obtain, not requiring a paired camera setup. However, there are techniques that we can only do a stereo pair that could more accurately estimate depth. 
 
@@ -41,28 +41,28 @@ In order to train the network, a pair of images with a known camera displacement
 
 ![CNNArchitecture]({{ '/assets/images/34/cnn_model_structure.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Fig 2: Unsupervised CNN [structure] [2]*
+*Figure 2: Unsupervised CNN structure [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 We can see a general setup of the implementation in Figure 2. In part 1, the encoder CNN maps the left image of the input pair to a predicted depth map. In part 2, the decoder creates a warped image by using an inverse warping from the right image of the input pair and the depth map, along with the known displacement between the two input images. The reconstructed output and the original input are then used to calculate the loss and train the network. At test time, we solely use the encoder, and predict the depthmap for a single-view image. 
 
 #### Autoencoder Loss:
 
-The input images are captured by a pair of cameras. Let $$f$$ be the focal length of the camera, and $$B^2$$ is the horizontal distance between the two cameras. Additionally, let the predicted depth of pixel $$x$$ in the left input image be $$d^i(x)$$. The motion of a pixel along a line from the left image to the right image is then $$fB/di(x)$$. Applying this to all pixels in the left image, we can get a warping $$I^i_w$$ from the left image to a reconstruction through the right image $$I^i_2$$ and depth map: $$Iiw  =  I^i_2(x + fB/di(x))$$. Using this warping, we compare it to the original image to get our reconstruction loss, as shown in equation 1. 
+The input images are captured by a pair of cameras. Let $$f$$ be the focal length of the camera, and $$B^2$$ is the horizontal distance between the two cameras. Additionally, let the predicted depth of pixel $$x$$ in the left input image be $$d^i(x)$$. The motion of a pixel along a line from the left image to the right image is then $$fB/di(x)$$. Applying this to all pixels in the left image, we can get a warping $$I^i_w$$ from the left image to a reconstruction through the right image $$I^i_2$$ and depth map: $$I^i_w  =  I^i_2(x + fB/di(x))$$. Using this warping, we compare it to the original image to get our reconstruction loss, as shown in equation 1. 
 
 ![AutoencoderLoss]({{ '/assets/images/34/cnn_reconstruction_loss.png' | relative_url }})
-{: style="width: 400px; max-width: 100%;"}
-*Equation 1: Autoencoder [loss] [2]*
+{: style="width: 600px; max-width: 100%;"}
+*Equation 1: Autoencoder loss [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 
 The paper also added an additional regularization term, in order to deal with something known as the aperture problem: the reconstruction loss is inaccurate when there are very similar regions in the same scene. This value, shown in Equation 2, is combined with the reconstruction loss to generate the full autoencoder loss, in Equation 3. The smoothness prior strength hyperparameter was set to 0.01.
 
 ![Regularization]({{ '/assets/images/34/cnn_smoothing.png' | relative_url }})
 {: style="width: 200px; max-width: 100%;"}
-*Equation 2: Regularization [term] [2]*
+*Equation 2: Regularization term [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 ![TotalLoss]({{ '/assets/images/34/cnn_total_loss.png' | relative_url }})
 {: style="width: 200px; max-width: 100%;"}
-*Equation 3: Total [Loss] [2]*
+*Equation 3: Total Loss [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 #### Coarse to Fine Training
 
@@ -70,13 +70,13 @@ Using a Taylor expansion to linearize the loss function as shown in equation fou
 
 ![TaylorExpansion]({{ '/assets/images/34/cnn_taylor_expansion.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Equation 4: Taylor Expansion of [Loss] [2]*
+*Equation 4: Taylor Expansion of Loss [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 In this case, $$I_{2h}$$ represents the horizontal gradient of the warped image, computed at disparity $$D^{n-1}$$. This only works when the difference in disparities $$(D^n(x) - D^{n-1}(x))$$ is small. To estimate larger disparities, the paper implements a coarse-to-fine architecture, along with iterative warping of the input image. To do this, a robust disparity initialization at the finer resolutions to linearize warps is needed, along with the corresponding CNN layer which predict the initial disparities. The paper uses a fully convolutional network, or FCN, to do this upsampling. 
 
 ![Upsampling]({{ '/assets/images/34/cnn_upsampling_pic.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Figure 3: CNN [Upsampling] [2]*
+*Figure 3: CNN Upsampling [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 As shown in Figure 3, given an input of Coarse Disparity, a bilinear upsampling filter is used to initialize upscaled disparities, which is double the size of the input. Finer details of the images are captured in the previous layers of CNN from the downsampling part, and combining the upscaled and finer disparities are helpful for refining the prediction. To do this, a 1 × 1 convolution initialized to zero is used, and then the convolved output is combined with the bilinear upscaled depths through an element-wise sum, in order to get our final refined disparity map.
 
@@ -84,9 +84,9 @@ As shown in Figure 3, given an input of Coarse Disparity, a bilinear upsampling 
 
 ![CNNArchitecture]({{ '/assets/images/34/cnn_architecture.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Figure 4: CNN [Architecture] [2]*
+*Figure 4: CNN Architecture [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
-The architecture of the encoder CNN is shown in Figure 4. It is similar to the first five layers of AlexNet [4], up to the C5 layer. These compose of convolutional and pooling layers, along with a ReLU activation function. The initial input is a 227x227x3 RGB image. Each convolutional layer takes in the image, and transforms it based on the number of channels. For the first two layers, there is also a LocalResponseNorm layer, which normalizes the pixel values within a small neighborhood of pixels, in this case the neighborhood is defined to be across the channels. The first five layers compose of five convolutional layers, 2 max pooling layers, and 2 normalization layers in total. 
+The architecture of the encoder CNN is shown in Figure 4. It is similar to the first five layers of AlexNet *[4]: <https://proceedings.neurips.cc/paper_files/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf>* , up to the C5 layer. These compose of convolutional and pooling layers, along with a ReLU activation function. The initial input is a 227x227x3 RGB image. Each convolutional layer takes in the image, and transforms it based on the number of channels. For the first two layers, there is also a LocalResponseNorm layer, which normalizes the pixel values within a small neighborhood of pixels, in this case the neighborhood is defined to be across the channels. The first five layers compose of five convolutional layers, 2 max pooling layers, and 2 normalization layers in total. 
 
 ```
 self.net = nn.Sequential(
@@ -108,7 +108,7 @@ self.net = nn.Sequential(
 ```
 
 
-Instead of the last maxpooling layer after C5, and then a sequence of fully connected layers, the encoder CNN uses 2048 convolutional filters, each of size 5x5 [3]. This reduces the number of parameters in the network, as convolutional layers are much cheaper than fully connected ones. It also enables the network to accept input images of varying sizes. Finally, we pass it through one more 1x1 convolutional layer, that allows us to get one channel for the predicted depth map. Then, the model starts sequentially upsampling the predicted depth map, at first using bilinear interpolation, to allow the final prediction to be detailed and match the original input size. The model  preserves spatial information within the image. Note that we also combine the output of layers L3 and L5 with the upsampling from F1 and F2, in order to combine the coarser depth prediction with the local image information. 
+Instead of the last maxpooling layer after C5, and then a sequence of fully connected layers, the encoder CNN uses 2048 convolutional filters, each of size 5x5 *[3]: <https://arxiv.org/pdf/1411.4038.pdf>*. This reduces the number of parameters in the network, as convolutional layers are much cheaper than fully connected ones. It also enables the network to accept input images of varying sizes. Finally, we pass it through one more 1x1 convolutional layer, that allows us to get one channel for the predicted depth map. Then, the model starts sequentially upsampling the predicted depth map, at first using bilinear interpolation, to allow the final prediction to be detailed and match the original input size. The model  preserves spatial information within the image. Note that we also combine the output of layers L3 and L5 with the upsampling from F1 and F2, in order to combine the coarser depth prediction with the local image information. 
 
 ```
 self.fcn = nn.Sequential(
@@ -141,7 +141,7 @@ The model was trained on the KITTI dataset, a well known dataset for depth estim
 
 ![EvaluationMetrics]({{ '/assets/images/34/cnn_metrics.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Equation 5: Evaluation [Metrics] [2]*
+*Equation 5: Evaluation Metrics [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 RMS is the difference in depth between the depth prediction and ground truth squared and then averaged and square rooted. Log RMS is similar, but takes the log of the prediction and ground truth first. Relative errors divide by the ground truth label. Finally, they evaluate the number of depth predictions such that the difference in prediction is under some threshold, meaning that it is relatively similar to the ground truth. 
 
@@ -153,17 +153,17 @@ Further augmentation was done while fine tuning the model: Color channels were m
 
 ![Table1]({{ '/assets/images/34/cnn_table_upsampling.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Table 1: Performance With [Upsampling] [2]*
+*Table 1: Performance With Upsampling [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 ![Table2]({{ '/assets/images/34/cnn_table_comparison.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Table 2: Performance Compared with Supervised Learning [Methods] [2]*
+*Table 2: Performance Compared with Supervised Learning Methods [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 In Table 1, we see the performance of their model at different resolutions. In each subsequent layer, the output depth map is upsampled by a factor of 2, and there is clearly a correlation between resolution and performance, as all error and accuracy metrics improve as resolution increases. It is interesting to consider how further upsampling may have affected the performance. In Table 2, the performance of their model compared to state of the art supervised learning methods is shown. It is clear that this unsupervised learning method is on par with, or even outperforms other supervised learning methods in a variety of metrics. Even with random initialization of weights and no ground truth labels, the model is still able to perform well. 
 
 ![SampleOutput]({{ '/assets/images/34/cnn_img_aug.png' | relative_url }})
 {: style="width: 400px; max-width: 100%;"}
-*Figure 5: Output with and without [Augmentation] [2]*
+*Figure 5: Output with and without Augmentation [2]: <https://arxiv.org/pdf/1603.04992.pdf>*
 
 Figure 5 shows an actual example of the outputted depth map. Note that the colors are brighter when the object is closer to the camera, and the depth map is able to capture much more detail. Even though this output now looks pretty low quality, at the time for an unsupervised method, it was considered quite effective. The results with the augmentations described above were able to localize object edges better, an important feature of depth estimation. Fine tuning significantly improved the results at a cheap training cost, and could be expanded to new outdoor datasets or perhaps other scenes as well.
 
@@ -264,8 +264,8 @@ Finally, the output convolutional layers are applied to reach a final output to 
 
 
 ![DepthAnythingStructure]({{ '/assets/images/34/depth_anything_structure.png' | relative_url }})
-{: style="width: 600px; max-width: 100%;"}
-*Figure 6: Depth Anything Model [Structure] [1]*
+{: style="width: 800px; max-width: 100%;"}
+*Figure 6: Depth Anything Model Structure [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 #### Student Model Cost Functions
 
@@ -277,7 +277,7 @@ The first loss function helps optimize the performance of the model when inferri
 
 ![LabeledLoss]({{ '/assets/images/34/depth_anything_labeled_loss.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Equations 6-9: Affine-Invariant Mean Absolute [Error] [1]*
+*Equations 6-9: Affine-Invariant Mean Absolute Error [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 
 As shown in the equations above, the first loss function measures the affine-invariant mean absolute error between the predicted deaths and the ground truth depth. First, as seen in Equation 8 and 9, the predicted depth values are shifted by the median and scaled by the mean absolute deviation of disparities over all pixels in the predicted depth map of a particular labeled example. The ground truth depth values also undergo the same transformations, except they are shifted and scaled by the statistics of the ground truth depth map. This makes both the predicted and actual depth maps affine-invariant, since all depth values now have a distribution of median 0 and absolute deviation 1 (regardless of how depths may have been scaled or shifted from example to example). Finally, as seen in equation 6 and 7, the absolute error between the normalized depth values of each corresponding pixel predicted and ground truth depth map is then calculated, before being averaged over all pixels in the image.
@@ -294,12 +294,11 @@ The second loss function helps optimize the performance of the model when inferr
 
 ![Augmentation]({{ '/assets/images/34/depth_anything_data_aug.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Figure 6: Gaussian Blurring (top left), Color Jittering (top right), CutMix Data Augmentation [(bottom)] [1]*
+*Figure 7: Gaussian Blurring (top left), Color Jittering (top right), CutMix Data Augmentation (bottom) [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 
 
-
-As seen in figure 6, two types of color distortion are added to the unlabeled images. The first is Gaussian blur, in which a Gaussian distribution is convolved over an image to blur the edges and feature of the image. The second is color jitter, in which an image’s brightness, contrast, saturation, and hue are randomly changed. These two types of image augmentation do not actually affect the positions or values of the ground truth depths of the image (at any given pixel in the image, the actual depth is still the same even after the augmentation). Thus, they can be evaluated on the same loss function as for labeled data.
+As seen in figure 7, two types of color distortion are added to the unlabeled images. The first is Gaussian blur, in which a Gaussian distribution is convolved over an image to blur the edges and feature of the image. The second is color jitter, in which an image’s brightness, contrast, saturation, and hue are randomly changed. These two types of image augmentation do not actually affect the positions or values of the ground truth depths of the image (at any given pixel in the image, the actual depth is still the same even after the augmentation). Thus, they can be evaluated on the same loss function as for labeled data.
 
 The third type of image augmentation used was CutMix, which is a type of spatial distortion. A rectangular section is taken out of one training image, and then replaced with the corresponding section of a different image. Since the corresponding ground truth depth map is different after CutMix (taking into account the depth maps of both images used), the cost function must be modified, as discussed in the next section.
 
@@ -309,8 +308,8 @@ Taking a look at the loss function used for training on unlabeled/pseudolabeled 
 
 
 ![UnlabeledLoss]({{ '/assets/images/34/depth_anything_unlabeled_loss.png' | relative_url }})
-{: style="width: 600px; max-width: 100%;"}
-*Equations 10-13: Affine-Invariant Mean Absolute Error, Accounting for Cutmix [Augmentations] [1]*
+{: style="width: 750px; max-width: 100%;"}
+*Equations 10-13: Affine-Invariant Mean Absolute Error, Accounting for Cutmix Augmentations [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 
 In equation 11, $$ρ$$ describes the same affine-invariant absolute error function as the one introduced in equation 7. The difference is what is passed in as the arguments to ρ. Since images that have undergone CutMix will have pixels associated with different images/depth maps at different pixels, we must first determine which ground truth depth map to evaluate at each pixel of the image, before passing the predicted depth along with the ground truth depth value at that pixel into $$ρ$$. In all three of the above equations, $$M$$ is a binary mask over the entire image with 0 corresponding to original image and 1 corresponding to the “cut-in” image, thus masking out the original image. It follows that $$1- M$$ masks out the “cut-in” image. $$u_{ab}$$ is the RGB values of the pixels of the image after CutMix is applied with image a being cut into image b. For the pixels in the cut-in region, $$L^M_u$$  is the affine-invariant mean absolute error between the student model depth prediction and the teacher model depth prediction (pseudo-label) for image $$a$$, For the pixels in the other part of the image, $$L^{1-M}_u$$ is the affine-invariant mean absolute error between the student model and teacher model depth prediction for image $$b$$. We then take the weighted average of both losses to calculate the final loss.
@@ -320,7 +319,7 @@ In equation 11, $$ρ$$ describes the same affine-invariant absolute error functi
 
 ![FeatureLoss]({{ '/assets/images/34/feat_loss.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Equations 14: Feature Alignment [Loss] [1]*
+*Equation 14: Feature Alignment Loss [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 Finally, the paper proposed adding semantic segmentation data as an input to the student model to help improve performance, since it would help add additional context for depth estimation and also reduce pseudo label noise. The paper found that simply adding this data doesn’t improve the model by much, so instead they optimized the student model on feature alignment loss between the output of the *Depth Anything* encoder and a frozen DINOv2 encoder on a pixel of a training image. The base DINOv2 encoder, as mentioned previously, captures semantically significant visual features in the image. Thus, by ensuring the DepthAnything a feature vector similar to DINOv2’s, this ensures DepthAnything is learning semantic information about the image as well that could be used to differentiate between objects in the scene of the image. 
 
@@ -335,7 +334,7 @@ As mentioned at the beginning, the student model is trained by optimizing an ave
 
 ![LabeledDatasets]({{ '/assets/images/34/depth_anything_labeled_datasets.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Table 3: Labeled Datasets Used by [DepthAnything] [1]*
+*Table 3: Labeled Datasets Used by DepthAnything [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 
 As can be seen in table 3, most of the labeled data comes from stereo datasets containing pairs of images labeled with their ground truth depth maps. Since the teacher MiDaS model and student *Depth Anything* model are both monocular depth estimators, these labeled datasets are repurposed as monocular datasets by only considering one image/depth map per example. Larger, more common datasets like KITTI and NYUv2 are used to evaluate zero-shot learning, so DepthAnything employs less common datasets for training such as BlendedMVS, which contains images and depth maps of indoor and outdoor scenes, and DIML, which contains Kinect-captured indoor and outdoor images. The total number of images in this collection is around 1.5 million.
@@ -343,7 +342,7 @@ As can be seen in table 3, most of the labeled data comes from stereo datasets c
 
 ![UnlabeledDatasets]({{ '/assets/images/34/depth_anything_unlabeled_datasets.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Table 4: Unlabeled Datasets Used by [DepthAnything] [1]*
+*Table 4: Unlabeled Datasets Used by DepthAnything [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 
 As can be seen in table 4, the unlabeled data comes from large datasets of images, most of which are labeled for tasks other than depth estimation. For example, Google Landmarks is a set of images of landmarks labeled with the actual names of the landmarks. ImageNet contains images of everyday objects and is labeled with the identity of those objects. Because these datasets are intended as unlabeled data, the labels can simply be ignored. By removing the need to have images labeled specifically with depth maps, there is a larger abundance of image datasets to sample from, allowing *Depth Anything* to take advantage of 65 million unlabeled images.
@@ -360,13 +359,13 @@ To train the student model, pseudo-labels are first assigned to each unlabeled i
 
 ![DepthAnythingImg]({{ '/assets/images/34/midas_v_depth_anything.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Figure 7: Example of Depth Anything [Output] [1]*
+*Figure 8: Example of Depth Anything Output [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 Above is an example picture of the depth estimation produced by *Depth Anything* vs. the previous most known model for molecular depth estimation. It is quite evident that the *Depth Anything* image was able to abstract and define clearly between the various objects of different depths, meanwhile the other models blurs the areas where there tend to be changes in depths. Overall *Depth Anything* image looks much sharper and extracts the most depth information from the raw image.
 
 ![DepthAnythingResultTables]({{ '/assets/images/34/depth_anything_tables_34.png' | relative_url }})
-{: style="width: 600px; max-width: 100%;"}
-*Tables 5 and 6: Comparison between Depth Anything and other Methods on in-domain [Datasets] [1]*
+{: style="width: 800px; max-width: 100%;"}
+*Tables 5 and 6: Comparison between Depth Anything and other Methods on in-domain Datasets [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 Note: $$δ_<threshold>$$: percent of pixels where the ratio between predicted and actual disparity is less than threshold. AbsRel: average relative difference between actual and predicted disparity. RMSE: Square root of mean squared difference between actual and predicted disparity
 
@@ -375,7 +374,7 @@ In the figure above, it shows how *Depth Anything* produces better results in-do
 
 ![DepthAnythingZeroShot]({{ '/assets/images/34/zoedepth_vs_depthanything_table.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
-*Tables 7: Comparison between Depth Anything and ZoeDepth on zero-shot [Learning] [1]*
+*Table 7: Comparison between Depth Anything and ZoeDepth on zero-shot Learning [1]: <https://arxiv.org/pdf/2401.10891v1.pdf>*
 
 In the figure above, it shows how *Depth Anything* produces better results for zero-shot metric depth estimation on various datasets as well than the previously metric molecular depth estimation model ZoeDepth.
 
