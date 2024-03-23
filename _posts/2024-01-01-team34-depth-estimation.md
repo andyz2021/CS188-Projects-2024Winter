@@ -367,7 +367,6 @@ Above is an example picture of the depth estimation produced by *Depth Anything*
 {: style="width: 800px; max-width: 100%;"}
 *Tables 5 and 6: Comparison between Depth Anything and other Methods on in-domain Datasets [[1]](https://arxiv.org/pdf/2401.10891v1.pdf)*
 
-Note: $$δ_<threshold>$$: percent of pixels where the ratio between predicted and actual disparity is less than threshold. AbsRel: average relative difference between actual and predicted disparity. RMSE: Square root of mean squared difference between actual and predicted disparity
 
 In the figure above, it shows how *Depth Anything* produces better results in-domain estimation compared to other novel depth estimations models with better scores in δ and absolute relative error as well as root mean squared error. 
 
@@ -380,14 +379,155 @@ In the figure above, it shows how *Depth Anything* produces better results for z
 
 
 ## Comparison
+In *Unsupervised CNN for Single View Depth Estimation*, the primary solution to the lack of training data for monocular depth estimation is to train a CNN-based encoder on unlabeled stereoscopic image pairs. This encoder is optimized by minimizing the error between the left image and a reconstruction of that image via inverse warping of the right image and the predicted depth map. This means that there is no need for labeled data as the model exploits geometric consistency between the left and right images, which is a natural cue in depth perception. However, this system is still dependent on the availability of stereo pairs, which are far less common than single-view photos. Furthermore, a reconstructed image may not perfectly match the original left image, especially in regions with occlusions and complex textures, which can easily affect the depth estimation. The smoothness assumption prior on disparities may not always hold true either in real-world scenes that contain sharp depth discontinuities and would  lead to oversmoothed depth maps. *Depth Anything* proposes a system in which an MDE can be trained on a combination of labeled and unlabeled monocular images. This enables the depth estimator to be trained on datasets of images that can be easily obtained and expanded upon.  Both are unsupervised and endeavors to resolve the significant issue of a lack of training data.
 
- Both are unsupervised and endeavors to resolve the issue of a lack of training data.
+After observing both the the result tables for both models when trained on the KITTI dataset, it seems that the δ accuracies *Depth Anything* (0.982, 0.998, 1.00) performs better than the *Unsupervised CNN for Single View Depth Estimation* (0.740, 0.904, 0.962). The absolute relative error and root mean squared error of Depth Anything (0.46, 1.896) is better than *Unsupervised CNN for Single View Depth Estimation* (0.169, 5.104). Overall *Depth Anything* still outperforms *Unsupervised CNN for Single View Depth Estimation* most likely evident to the fact that *Depth Anything* used more modern ideas as the paper was just published this year as opposed to *Unsupervised CNN for Single View Depth Estimation* published back in 2017. *Depth Anything* was trained on a combination of labeled and unlabeled monocular images as well as utilized more complex data augmentation algorithms such as *CutMix*, allowing for a more diverse, robust, and extensive training dataset. This likely helped the model to learn more generalizable features for depth estimation, compared to relying solely on unsupervised learning and stereoscopic pairs. *Unsupervised CNN for Single View Depth Estimation* utilizes some level of feature combination in combining of different convolution and upsampling layers to integrate coarser depth predictions with local image information. On the other hand, *Depth Anything* employs more advanced model architecture such as Feature fusion blocks with residual connections to fuse features from different layers of network to provide a richer representation of the scene. This allows the model to better distinguish between continuous surfaces and discontinuities allowing for sharper output images. 
 
-In Unsupervised CNN for Single View Depth Estimation, the primary solution to the lack of training data for monocular depth estimation is to train a CNN-based encoder on unlabeled stereoscopic image pairs. This encoder is optimized by minimizing the error between the left image and a reconstruction of that image via inverse warping of the right image and the predicted depth map. This means that there is no need for labeled data as the model exploits geometric consistency between the left and right images, which is a natural cue in depth perception. However, this system is still dependent on the availability of stereo pairs, which are far less common than single-view photos. Furthermore, a reconstructed image may not perfectly match the original left image, especially in regions with occlusions and complex textures, which can easily affect the depth estimation. The smoothness assumption prior on disparities may not always hold true either in real-world scenes that contain sharp depth discontinuities and would  lead to oversmoothed depth maps. Depth Anything proposes a system in which an MDE can be trained on a combination of labeled and unlabeled monocular images. This enables the depth estimator to be trained on datasets of images that can be easily obtained and expanded upon. 
 
 ## Code
+We finetuned the Depth Anything model for a downstream task in order to do image classification. We explored fine tuning the model on the Miniplaes dataset we used in Assignment 2. We also explore running the Depth Anything model on our own images, and evaluating the generated depthmap. 
+
+![OriginalImg]({{ '/assets/images/34/example_img.png' | relative_url }})
+{: style="width: 600px; max-width: 100%;"}
+*Figure 9: Sample Image*
+
+
+![DepthMap]({{ '/assets/images/34/example_depthmap.png' | relative_url }})
+{: style="width: 600px; max-width: 100%;"}
+*Figure 10: Sample Depthmap*
+
+We can see an example of a Depth Anything depthmap in figure 10, from the original image in figure 9. As we can see, the closer the object is to the camera, the more bright it is. Note how Depth Anything can also capture the flowers in the background as well in detail. 
+
+### Demo
+
+First, in order to finetune the model, we clone the repository from github. 
+
+```
+!git clone https://github.com/LiheYoung/Depth-Anything.git
+%cd Depth-Anything
+```
+Import the required libraries, such as torch, numpy, and more.
+
+```
+import cv2
+import numpy as np
+import torch
+import torch.nn.functional as F
+import torchvision.models as models
+from torch import nn
+```
+
+Then, download a dataset of your choice. In our demonstration, we use the miniplaces dataset. 
+
+```
+# Downloading this file takes about a few seconds.
+# Download the tar.gz file from google drive using its file ID.
+!pip3 install --upgrade gdown --quiet
+# unfortunately, only the following command seems to be constantly working...
+!wget https://web.cs.ucla.edu/~smo3/data.tar.gz
+```
+
+Follow the same steps as the assignment, or follow the instructions for your own dataset. After the dataset is downloaded into colab, we can set up the model. 
+
+```
+from depth_anything.dpt import DepthAnything
+
+
+
+
+class DepthAnythingFinetuned(nn.Module):
+
+
+   def __init__(self, include_residual=True):
+       super().__init__()
+
+
+       encoder = 'vits' # can also be 'vitb' or 'vitl'
+
+
+       # config = {"encoder":'vitl', "features":256, "out_channels":[256, 512, 1024, 1024], "use_bn":False, "use_clstoken":False, "localhub":False}
+
+
+       input_channels = 4 if include_residual else 1
+       self.depth_anything = DepthAnything.from_pretrained('LiheYoung/depth_anything_{:}14'.format(encoder), local_files_only=False)
+       self.cnn = FastConv(input_channels=input_channels,
+                conv_hidden_channels=64,
+                conv_out_channels=128,
+                input_size=(140, 140),
+                dropout_rate1=0.25,
+                dropout_rate2=0.5,
+                fc_out_channels=128,
+                kernel_size=3,
+                stride=2,
+                padding=1,
+                num_classes=len(miniplaces_train.label_dict))
+       self.include_residual = include_residual
+       # self.depth_anything_conv = nn.Sequential(self.depth_anything, self.cnn)
+
+
+   def forward(self, x):
+       if self.include_residual:
+         res = x
+         x = self.depth_anything(x)
+         x = torch.reshape(x, (x.shape[0], 1, x.shape[1], x.shape[2]))
+         x = torch.concat((res, x), 1)
+       else:
+         x = self.depth_anything(x)
+         x = torch.reshape(x, (x.shape[0], 1, x.shape[1], x.shape[2]))
+       # print(x.shape)
+       x = self.cnn(x)
+       return x
+
+
+   # def to(self, device):
+   #     return self.depth_anything_conv.to(device=device)
+
+```
+
+In our demonstration, we run the input image through the Depth Anything model, and append that output with the original image, and pass it through the CNN. Instead of a 3 channel input, with RGB, we have a 4 channel input, with the RGB channels, as well as the predicted depth map. This adds extra information to the CNN. This is somewhat like a residual, where we may choose to include the residual depthmap, or exclude it if we only want the base CNN. Note that the optimizer settings can also be edited, such as learning rate, momentum, or optimizer formula. 
+
+```
+# Define the model, optimizer, and criterion (loss_fn)
+model3 = DepthAnythingFinetuned(include_residual=False)
+
+# Let's use the built-in optimizer for a full version of SGD optimizer
+optimizer = torch.optim.SGD(model3.parameters(), lr=0.01, momentum=0.9)
+
+# For loss function, your implementation and the built-in loss function should
+# be almost identical.
+criterion = nn.CrossEntropyLoss()
+
+# Train the model
+train(model3,
+      train_loader,
+      val_loader,
+      optimizer,
+      criterion,
+      device,
+      num_epochs=5)
+```
+
+After training the model, we see that it achieves an accuracy of .1781 after 5 epochs. While this is low, note that the FastConv CNN we used for the classification performed badly as well, around .174 accuracy. Due to the original CNN not being able to learn the images well enough, the provided depthmap didn’t make a noticeable impact in accuracy. In this specific instance, Depth Anything was more used as a data augmentation technique, providing the residual depthmap along with the original image. If we had more time and computing power to train a more robust model like ResNet, the residual may have a larger impact on the training accuracy. 
+
+We can also use the pretrained Depth Anything model to obtain the depthmap of any input image. We can open the image, and then obtain the depthmap through the pipeline module from the transformers library. This will show the original image and predicted depthmap, like figures 9 and 10 display. 
+
+```
+from transformers import pipeline
+from PIL import Image
+
+
+image = Image.open('/content/Depth-Anything/CS188_W24/Assignment2/data/images/train/a/abbey/00000001.jpg') # or any image
+pipe = pipeline(task="depth-estimation", model="LiheYoung/depth-anything-small-hf")
+depthmap = pipe(image)["depth"]
+
+
+display(image)
+display(depthmap)
+```
 
 ## Conclusion
+
+Depth Estimation is an incredibly important application of deep learning. It can enable advancements in autonomous vehicles, robotics, and so much more. Our investigations into two different approaches Unsupervised CNN for Single View Depth Estimation, and Depth Anything, showcase the power of depth estimation. Unsupervised CNN for Single View Depth Estimation addressed the limiting factor of labeled images, while still performing comparably. Depth Anything especially performs well for both in-domain and zero-shot depth estimation, being able to generalize to a wide variety of images. It outperforms other state of the art approaches, while being trained on an incredibly large dataset of unlabeled images, further increasing its robustness. We also show that Depth Anything can be generalized to downstream computer vision tasks, whether that be image classification, or semantic segmentation. It was impressive how Depth Anything was able to perform on image classification tasks, and showcases its potential for generalizing to a variety of tasks through further fine tuning and refinement. 
 
 
 <!-- ## Basic Syntax
