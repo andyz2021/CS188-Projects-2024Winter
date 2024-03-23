@@ -525,6 +525,8 @@ display(image)
 display(depthmap)
 ```
 
+Link to [Demo](https://colab.research.google.com/drive/1eD0sTrn9tND0uU4_sQ419S89POvvrN9E?usp=sharing).
+
 ## Conclusion
 
 Depth Estimation is an incredibly important application of deep learning. It can enable advancements in autonomous vehicles, robotics, and so much more. Our investigations into two different approaches Unsupervised CNN for Single View Depth Estimation, and Depth Anything, showcase the power of depth estimation. Unsupervised CNN for Single View Depth Estimation addressed the limiting factor of labeled images, while still performing comparably. Depth Anything especially performs well for both in-domain and zero-shot depth estimation, being able to generalize to a wide variety of images. It outperforms other state of the art approaches, while being trained on an incredibly large dataset of unlabeled images, further increasing its robustness. We also show that Depth Anything can be generalized to downstream computer vision tasks, whether that be image classification, or semantic segmentation. It was impressive how Depth Anything was able to perform on image classification tasks, and showcases its potential for generalizing to a variety of tasks through further fine tuning and refinement. 
