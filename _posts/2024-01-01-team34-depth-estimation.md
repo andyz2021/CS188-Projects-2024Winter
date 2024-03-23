@@ -385,7 +385,7 @@ After observing both the the result tables for both models when trained on the K
 
 
 ## Code
-We finetuned the Depth Anything model for a downstream task in order to do image classification. We explored fine tuning the model on the Miniplaes dataset we used in Assignment 2. We also explore running the Depth Anything model on our own images, and evaluating the generated depthmap. 
+We finetuned the *Depth Anything* model for a downstream task in order to do image classification. We explored fine tuning the model on the Miniplaes dataset we used in Assignment 2. We also explore running the *Depth Anything* model on our own images, and evaluating the generated depthmap. Unfortunately, due to the *Depth Anything* authors not providing their source model, we were unable to make modifications and train it from scratch. None of the teacher model code is included in the Github. It only contains the pretrained model, which we then used to finetune for an image classification model. 
 
 ![OriginalImg]({{ '/assets/images/34/example_img.png' | relative_url }})
 {: style="width: 600px; max-width: 100%;"}
@@ -396,7 +396,7 @@ We finetuned the Depth Anything model for a downstream task in order to do image
 {: style="width: 600px; max-width: 100%;"}
 *Figure 10: Sample Depthmap*
 
-We can see an example of a Depth Anything depthmap in figure 10, from the original image in figure 9. As we can see, the closer the object is to the camera, the more bright it is. Note how Depth Anything can also capture the flowers in the background as well in detail. 
+We can see an example of a *Depth Anything* depthmap in figure 10, from the original image in figure 9. As we can see, the closer the object is to the camera, the more bright it is. Note how Depth Anything can also capture the flowers in the background as well in detail. 
 
 ### Demo
 
@@ -484,7 +484,7 @@ class DepthAnythingFinetuned(nn.Module):
 
 ```
 
-In our demonstration, we run the input image through the Depth Anything model, and append that output with the original image, and pass it through the CNN. Instead of a 3 channel input, with RGB, we have a 4 channel input, with the RGB channels, as well as the predicted depth map. This adds extra information to the CNN. This is somewhat like a residual, where we may choose to include the residual depthmap, or exclude it if we only want the base CNN. Note that the optimizer settings can also be edited, such as learning rate, momentum, or optimizer formula. 
+In our demonstration, we run the input image through the *Depth Anything* model, and append that output with the original image, and pass it through the CNN. Instead of a 3 channel input, with RGB, we have a 4 channel input, with the RGB channels, as well as the predicted depth map. This adds extra information to the CNN. This is somewhat like a residual, where we may choose to include the residual depthmap, or exclude it if we only want the base CNN. Note that the optimizer settings can also be edited, such as learning rate, momentum, or optimizer formula. 
 
 ```
 # Define the model, optimizer, and criterion (loss_fn)
@@ -507,9 +507,9 @@ train(model3,
       num_epochs=5)
 ```
 
-After training the model, we see that it achieves an accuracy of .1781 after 5 epochs. While this is low, note that the FastConv CNN we used for the classification performed badly as well, around .174 accuracy. Due to the original CNN not being able to learn the images well enough, the provided depthmap didn’t make a noticeable impact in accuracy. In this specific instance, Depth Anything was more used as a data augmentation technique, providing the residual depthmap along with the original image. If we had more time and computing power to train a more robust model like ResNet, the residual may have a larger impact on the training accuracy. 
+After training the model, we see that it achieves an accuracy of .1781 after 5 epochs. While this is low, note that the FastConv CNN we used for the classification performed badly as well, around .174 accuracy. Due to the original CNN not being able to learn the images well enough, the provided depthmap didn’t make a noticeable impact in accuracy. In this specific instance, *Depth Anything* was more used as a data augmentation technique, providing the residual depthmap along with the original image. If we had more time and computing power to train a more robust model like ResNet, the residual may have a larger impact on the training accuracy. 
 
-We can also use the pretrained Depth Anything model to obtain the depthmap of any input image. We can open the image, and then obtain the depthmap through the pipeline module from the transformers library. This will show the original image and predicted depthmap, like figures 9 and 10 display. 
+We can also use the pretrained *Depth Anything* model to obtain the depthmap of any input image. We can open the image, and then obtain the depthmap through the pipeline module from the transformers library. This will show the original image and predicted depthmap, like figures 9 and 10 display. 
 
 ```
 from transformers import pipeline
